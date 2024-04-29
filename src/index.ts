@@ -64,6 +64,8 @@ app.post('/user', (req: Request, res: Response, next: NextFunction) => {
         const task = new Task()
         task.user = user
         task.scheduledAt = taskAt
+        task.attempts = 0
+        task.status = 'ready'
         return taskRepository.save(task)
     }).then((task: Task) => {
         console.log("Created a task with id: " + task.id)
@@ -124,6 +126,32 @@ app.put('/user/:userId', (req: Request, res: Response, next: NextFunction) => {
 
     // TODO: check existing task for changed birthday with taskService
 });
+
+app.get('/task', (req: Request, res: Response, next: NextFunction) => {
+    const taskRepository = AppDataSource.getRepository(Task)
+    taskRepository.find().then((allTasks: Task[]) => {
+        res.send(allTasks)
+    }).catch(errors => {
+        next(errors)
+    });
+})
+
+app.post('/task/schedule', (req: Request, res: Response, next: NextFunction) => {
+    const taskRepository = AppDataSource.getRepository(Task)
+    const taskSvc = new TaskService()
+
+    taskRepository.createQueryBuilder("task")
+        .where("datetime(task.scheduledAt) <= datetime(:now)", { now: moment().utc() })
+        .andWhere("task.status = :status", { status: "ready" }).getMany()
+    .then((allTasks: Task[]) => {
+        for (var task of allTasks) {
+            taskSvc.processTask(task)
+        }
+        res.send({})
+    }).catch(errors => {
+        next(errors)
+    });
+})
 
 app.use(jsonErrorHandler)
 

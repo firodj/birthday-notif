@@ -19,6 +19,9 @@ test('create task', async () => {
     const aliceTask = new Task()
     aliceTask.user = alice
     aliceTask.scheduledAt = moment.tz("2025-02-20 05:00", alice.timezone)
+    aliceTask.attempts = 0
+    aliceTask.status = 'ready'
+
     await taskRepository.save(aliceTask)
 
     const aliceTasked = await taskRepository.findOne({where: {id: aliceTask.id}, relations: { user: true } })

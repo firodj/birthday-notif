@@ -2,6 +2,12 @@ import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne } from "typeor
 import { User } from "./User"
 import moment from 'moment';
 
+export enum TaskStatus {
+    READY = "ready",
+    DONE = "done",
+    FAIL = "fail",
+}
+
 @Entity()
 export class Task {
     @PrimaryGeneratedColumn()
@@ -22,4 +28,25 @@ export class Task {
 
     @ManyToOne(() => User, (user) => user.tasks)
     user: User
+
+    @Column({
+        default: TaskStatus.READY,
+    })
+    status: string
+
+    @Column({
+        type: 'integer',
+        default: 0,
+    })
+    attempts: number
+
+    @Column({
+        nullable: true,
+    })
+    lastAttempt: string
+
+    @Column({
+        nullable: true
+    })
+    lastError: string
 }

@@ -28,4 +28,24 @@ The API consist of:
 The Database connsist of:
 
 * User table, to store user information
-* Task table, to store scheduler information
+* Task table, to store scheduler information and failed attempts
+
+## Development
+
+Install dependency:
+
+```sh
+$ npm install
+```
+
+Running test:
+
+```sh
+$ npm run test
+```
+
+Running dev server:
+
+```sh
+$ npm run dev
+```
