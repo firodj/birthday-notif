@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, Index, OneToMany } from "typeorm"
+import { Task }  from './Task'
 import moment from 'moment';
 
 @Entity()
@@ -19,8 +20,8 @@ export class User {
             to(value) {
                 return moment(value).format('YYYY-MM-DD');
             },
-            from(value: moment.Moment) {
-                return value
+            from(value) {
+                return moment(value)
             }
         },
     })
@@ -28,4 +29,7 @@ export class User {
 
     @Column()
     timezone: string
+
+    @OneToMany(() => Task, (task) => task.user)
+    tasks: Task[]
 }
