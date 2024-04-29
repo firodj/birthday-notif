@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+import moment from 'moment';
 
 @Entity()
+@Index(["firstName", "lastName"], { unique: true })
 export class User {
-
     @PrimaryGeneratedColumn()
     id: number
 
@@ -12,8 +13,8 @@ export class User {
     @Column()
     lastName: string
 
-    @Column("date")
-    birthdayDate: string
+    @Column({ type: "date" })
+    birthday: moment.Moment
 
     @Column()
     timezone: string

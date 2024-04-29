@@ -8,7 +8,7 @@ test('create user and get', async () => {
     const timber = new User()
     timber.firstName = "Timber"
     timber.lastName = "Saw"
-    timber.birthdayDate = "2024-02-20"
+    timber.birthday = "2024-02-20"
     timber.timezone = "Asia/Jakarta"
 
     await userRepository.save(timber)
