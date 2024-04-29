@@ -33,9 +33,10 @@ app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     const svc = new UserService()
     const userRepository = AppDataSource.getRepository(User)
 
-    svc.validateCreateUser(req.body)
+    svc.validateUserParam(req.body)
 
-    const user = svc.newCreateUser(req.body)
+    const user = new User()
+    svc.applyUser(user, req.body)
 
     userRepository.save(user).then((user: User) => {
         console.log("Saved a new user with id: " + user.id)
@@ -52,7 +53,7 @@ app.delete('/user/:userId', (req: Request, res: Response, next: NextFunction) =>
     const userRepository = AppDataSource.getRepository(User)
     const userId = parseInt(req.params?.userId)
     if (!userId) {
-        return res.status(401).send({error: "Not found"})
+        return res.status(401).send({error: "Invalid id"})
     }
 
     userRepository.findOneBy({ id: userId }).then((user: User | null) => {
@@ -64,6 +65,34 @@ app.delete('/user/:userId', (req: Request, res: Response, next: NextFunction) =>
         return userRepository.delete({ id: user.id })
     }).then((result) => {
         res.send({affected: result.affected})
+    }).catch(errors => {
+        next(errors)
+    });
+});
+
+app.put('/user/:userId', (req: Request, res: Response, next: NextFunction) => {
+    const svc = new UserService()
+    const userRepository = AppDataSource.getRepository(User)
+    const userId = parseInt(req.params?.userId)
+    if (!userId) {
+        return res.status(401).send({error: "Invalid id"})
+    }
+
+    userRepository.findOneBy({ id: userId }).then((user: User | null) => {
+        if (!user) {
+            return Promise.reject(new Error("Not found"))
+        }
+        return user
+    }).then((user: User) => {
+        svc.validateUserParam(req.body)
+        svc.applyUser(user, req.body)
+        return userRepository.save(user)
+    }).then((user: User) => {
+        console.log("Saved an existing user with id: " + user.id)
+        const data = {
+            userId: user.id
+        }
+        res.status(200).send(data)
     }).catch(errors => {
         next(errors)
     });

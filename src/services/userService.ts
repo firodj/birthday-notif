@@ -11,7 +11,7 @@ export class UserService {
         return d != null && d.isValid();
     }
 
-    validateCreateUser(body: any) {
+    validateUserParam(body: any) {
         const { firstName,  birthday, timezone } = body;
 
         if (typeof firstName != 'string' || firstName == '') {
@@ -25,10 +25,9 @@ export class UserService {
         }
     }
 
-    newCreateUser(body: any): User {
+    applyUser(user: User, body: any): User {
         const { firstName, lastName,  birthday, timezone } = body;
 
-        const user = new User()
         user.firstName = firstName
         user.lastName = lastName
         user.birthday = moment(birthday, "YYYY-MM-DD")
