@@ -31,12 +31,13 @@ app.get('/', (req: Request, res: Response) => {
 
 app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     const svc = new UserService()
+    const userRepository = AppDataSource.getRepository(User)
 
     svc.validateCreateUser(req.body)
 
     const user = svc.newCreateUser(req.body)
 
-    AppDataSource.manager.save(user).then((user: User) => {
+    userRepository.save(user).then((user: User) => {
         console.log("Saved a new user with id: " + user.id)
         const data = {
             userId: user.id
@@ -47,24 +48,26 @@ app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-app.post('/demo', async (req: Request, res: Response) => {
-    console.log("Inserting a new user into the database...")
-    const user = new User()
-    user.firstName = "Timber"
-    user.lastName = "Saw"
-    user.birthday = moment("1980-02-20")
-    user.timezone = "Asia/Jakarta"
+app.delete('/user/:userId', (req: Request, res: Response, next: NextFunction) => {
+    const userRepository = AppDataSource.getRepository(User)
+    const userId = parseInt(req.params?.userId)
+    if (!userId) {
+        return res.status(401).send({error: "Not found"})
+    }
 
-    await AppDataSource.manager.save(user)
-
-    console.log("Saved a new user with id: " + user.id)
-
-    console.log("Loading users from the database...")
-    const users = await AppDataSource.manager.find(User)
-    console.log("Loaded users: ", users)
-
-    console.log("Here you can setup and run express / fastify / any other framework.")
-})
+    userRepository.findOneBy({ id: userId }).then((user: User | null) => {
+        if (!user) {
+            return Promise.reject(new Error("Not found"))
+        }
+        return user
+    }).then((user: User) => {
+        return userRepository.delete({ id: user.id })
+    }).then((result) => {
+        res.send({affected: result.affected})
+    }).catch(errors => {
+        next(errors)
+    });
+});
 
 app.use(jsonErrorHandler)
 
