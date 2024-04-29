@@ -122,7 +122,14 @@ app.put('/user/:userId', (req: Request, res: Response, next: NextFunction) => {
 
 app.get('/task', (req: Request, res: Response, next: NextFunction) => {
     const taskRepository = AppDataSource.getRepository(Task)
-    taskRepository.find().then((allTasks: Task[]) => {
+    taskRepository.find({
+        relations: {
+            user: true,
+        },
+        where: {
+            status: TaskStatus.READY,
+        }
+    }).then((allTasks: Task[]) => {
         res.send(allTasks)
     }).catch(errors => {
         next(errors)

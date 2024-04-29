@@ -26,7 +26,7 @@ export class UserService {
     }
 
     applyUser(user: User, body: any): User {
-        const { firstName, lastName,  birthday, timezone } = body;
+        const { firstName, lastName, birthday, timezone } = body;
 
         user.firstName = firstName
         user.lastName = lastName

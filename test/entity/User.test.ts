@@ -20,5 +20,5 @@ test('create user and get', async () => {
 
     const timbered = await userRepository.findOneBy({id: timber.id })
     expect(timbered?.firstName).toBe(timber.firstName)
-    expect(timbered?.birthday.format('YYYY-MM-DD')).toBe("2024-02-20")
+    expect(timbered?.birthday.format('YYYY-MM-DD Z')).toBe("2024-02-20 +00:00")
 });

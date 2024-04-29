@@ -18,10 +18,10 @@ export class User {
         type: "date",
         transformer: {
             to(value) {
-                return moment(value).format('YYYY-MM-DD');
+                return value.format('YYYY-MM-DD');
             },
             from(value) {
-                return moment(value)
+                return moment.utc(value)
             }
         },
     })
