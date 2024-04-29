@@ -1,25 +1,26 @@
 import express, { Express, Request, Response , Application, NextFunction } from 'express';
 import { AppDataSource } from "./data-source"
 import { User } from "./entity/User"
+import { UserService }  from "./services/userService"
+
 import moment from 'moment-timezone';
 
 const app: Application = express();
 const port = process.env.PORT || 8000;
 
-function isValidTimezone(timezone: string): boolean {
-    return moment.tz.zone(timezone) != null;
-}
-
-function isValidDate(datestr: string): boolean {
-    var d = moment(datestr, 'YYYY-MM-DD', true);
-    return d != null && d.isValid();
-}
-
 const jsonErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) {
 		return next(err);
 	}
-    res.status(500).send({ error: err });
+    console.log(err)
+    let msg = "undefined error"
+    if (err.stack) {
+        msg = err.stack
+    }
+    if (typeof err.toString === "function") {
+		msg =  err.toString();
+	}
+    res.status(500).send({ error: msg });
 }
 
 app.use(express.json()) // for parsing application/json
@@ -29,22 +30,11 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.post('/user', (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.body)
+    const svc = new UserService()
 
-    const { firstName, lastName,  birthday, timezone } = req.body;
+    svc.validateCreateUser(req.body)
 
-    if (!isValidTimezone(timezone)) {
-        throw new Error(`invalid timezone ${timezone}`)
-    }
-    if (!isValidDate(birthday)) {
-        throw new Error(`invalid birthday ${birthday}`)
-    }
-
-    const user = new User()
-    user.firstName = firstName
-    user.lastName = lastName
-    user.birthday = moment(birthday, "YYYY-MM-DD")
-    user.timezone = timezone
+    const user = svc.newCreateUser(req.body)
 
     AppDataSource.manager.save(user).then((user: User) => {
         console.log("Saved a new user with id: " + user.id)

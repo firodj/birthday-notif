@@ -1,5 +1,6 @@
 import { TestDataSource } from '../utils/database';
 import { User } from "../../src/entity/User"
+import moment from 'moment-timezone';
 
 test('create user and get', async () => {
     await TestDataSource.initialize();
@@ -8,7 +9,7 @@ test('create user and get', async () => {
     const timber = new User()
     timber.firstName = "Timber"
     timber.lastName = "Saw"
-    timber.birthday = "2024-02-20"
+    timber.birthday = moment("2024-02-20")
     timber.timezone = "Asia/Jakarta"
 
     await userRepository.save(timber)
