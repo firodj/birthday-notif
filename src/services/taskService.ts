@@ -23,7 +23,8 @@ export class TaskService {
         // TODO:
         // ensure task user loaded
         // perform send api to: https://email-service.digitalenvision.com.au/api-docs/
-        // if OK, set task status DONE
+        // if OK, set task status DONE:
+        // - add another task by find next schedule (next year)
         // if error:
         // - increase attempts
         // - if attempts exceeded maximum (let say a day), set task status FAIL, otherwise
