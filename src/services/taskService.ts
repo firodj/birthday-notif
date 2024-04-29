@@ -1,11 +1,14 @@
 import moment from 'moment-timezone';
 import { User } from "../entity/User"
-import { Task } from "../entity/Task"
+import { Task, TaskStatus } from "../entity/Task"
+import { DataSource } from "typeorm"
 
 export class TaskService {
     today: moment.Moment
+    ds: DataSource
 
-    constructor(today?: moment.Moment) {
+    constructor(ds: DataSource, today?: moment.Moment) {
+        this.ds = ds
         this.today = today ?? moment()
     }
 
@@ -19,17 +22,72 @@ export class TaskService {
         return taskAt
     }
 
+    createNextSchedule(user: User): Promise<Task> {
+        const taskRepository = this.ds.getRepository(Task)
+        const taskAt = this.findNextSchedule(user)
+
+        const task = new Task()
+        task.user = user
+        task.scheduledAt = taskAt
+        task.attempts = 0
+        task.status = TaskStatus.READY
+        return taskRepository.save(task)
+    }
+
+    sendEmail(email: string, message: string) {
+        return fetch('https://email-service.digitalenvision.com.au/send-email', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+            body: JSON.stringify({
+                email, message,
+            }),
+        })
+    }
+
+    createBackoffTime(now: moment.Moment) {
+        const min = 10
+        const max = 30
+        const result = Math.random() * (max - min) + min
+        const minutes = Math.floor(result)
+        return now.clone().add(minutes, 'minutes')
+    }
+
     processTask(task: Task) {
-        // TODO:
-        // ensure task user loaded
-        // perform send api to: https://email-service.digitalenvision.com.au/api-docs/
-        // if OK, set task status DONE:
-        // - add another task by find next schedule (next year)
-        // if error:
-        // - increase attempts
-        // - if attempts exceeded maximum (let say a day), set task status FAIL, otherwise
-        // - update scheduledAt for next trial eg. next 1 hour
-        // - update lastAttempt to current time, and lastError to store error message
-        // - task status READY
+        const taskRepository = this.ds.getRepository(Task)
+        const now = moment()
+
+        let fullname = task.user.firstName
+        if (task.user.lastName) fullname += " " + task.user.lastName
+        const email = `${task.user.firstName}${task.user.lastName}@example.com`
+        const message = `Hey, ${fullname} it's your birthday`
+
+        task.lastAttempt = now.utc().toISOString()
+        task.lastError = null
+        task.attempts++
+        task.status = TaskStatus.SENDING
+        taskRepository.save(task)
+
+        this.sendEmail(email, message).then((res) => {
+            console.log(res.status, email, message)
+
+            task.status = TaskStatus.DONE
+            taskRepository.save(task)
+
+            this.createNextSchedule(task.user)
+        }).catch((err) => {
+            console.error(err)
+            if (task.attempts >= 5) {
+                task.status = TaskStatus.FAIL
+            } else {
+                task.lastError = err
+                task.status = TaskStatus.READY
+                task.scheduledAt = this.createBackoffTime(now)
+            }
+
+            taskRepository.save(task)
+        })
     }
 }

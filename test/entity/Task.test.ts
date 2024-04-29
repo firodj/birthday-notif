@@ -1,6 +1,6 @@
 import { TestDataSource } from '../utils/database';
 import { User } from "../../src/entity/User"
-import { Task } from "../../src/entity/Task"
+import { Task, TaskStatus } from "../../src/entity/Task"
 import moment from 'moment-timezone';
 
 test('create task', async () => {
@@ -20,7 +20,7 @@ test('create task', async () => {
     aliceTask.user = alice
     aliceTask.scheduledAt = moment.tz("2025-02-20 05:00", alice.timezone)
     aliceTask.attempts = 0
-    aliceTask.status = 'ready'
+    aliceTask.status = TaskStatus.READY
 
     await taskRepository.save(aliceTask)
 

@@ -6,6 +6,7 @@ export enum TaskStatus {
     READY = "ready",
     DONE = "done",
     FAIL = "fail",
+    SENDING = "sending",
 }
 
 @Entity()
@@ -41,12 +42,14 @@ export class Task {
     attempts: number
 
     @Column({
+        type: 'text',
         nullable: true,
     })
-    lastAttempt: string
+    lastAttempt?: string | null
 
     @Column({
+        type: 'text',
         nullable: true
     })
-    lastError: string
+    lastError?: string | null
 }

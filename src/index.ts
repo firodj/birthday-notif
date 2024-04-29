@@ -1,7 +1,7 @@
 import express, { Express, Request, Response , Application, NextFunction } from 'express';
 import { AppDataSource } from "./data-source"
 import { User } from "./entity/User"
-import { Task } from "./entity/Task"
+import { Task, TaskStatus } from "./entity/Task"
 import { UserService }  from "./services/userService"
 import { TaskService }  from "./services/taskService"
 
@@ -42,7 +42,7 @@ app.get('/user', (req: Request, res: Response, next: NextFunction) => {
 
 app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     const svc = new UserService()
-    const taskSvc = new TaskService()
+    const taskSvc = new TaskService(AppDataSource)
     const userRepository = AppDataSource.getRepository(User)
     const taskRepository = AppDataSource.getRepository(Task)
 
@@ -59,14 +59,7 @@ app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     userRepository.save(user).then((user: User) => {
         console.log("Saved a new user with id: " + user.id)
         data.userId = user.id
-        const taskAt = taskSvc.findNextSchedule(user)
-
-        const task = new Task()
-        task.user = user
-        task.scheduledAt = taskAt
-        task.attempts = 0
-        task.status = 'ready'
-        return taskRepository.save(task)
+        return taskSvc.createNextSchedule(user)
     }).then((task: Task) => {
         console.log("Created a task with id: " + task.id)
         data.taskId = task.id
@@ -137,17 +130,31 @@ app.get('/task', (req: Request, res: Response, next: NextFunction) => {
 })
 
 app.post('/task/schedule', (req: Request, res: Response, next: NextFunction) => {
+    let now = moment().utc()
+    const xNow = req.get('X-Now')
+    if (typeof xNow == 'string' && xNow != '') {
+        const dbgnow = moment(xNow, "YYYY-MM-DD HH:mm Z", true)
+        if (dbgnow) {
+            now = dbgnow.utc()
+            console.log(`X-Now: ${now.format('YYYY-MM-DD HH:mm Z')}`)
+        }
+    }
+
     const taskRepository = AppDataSource.getRepository(Task)
-    const taskSvc = new TaskService()
+    const taskSvc = new TaskService(AppDataSource, now)
 
     taskRepository.createQueryBuilder("task")
-        .where("datetime(task.scheduledAt) <= datetime(:now)", { now: moment().utc() })
-        .andWhere("task.status = :status", { status: "ready" }).getMany()
+        .leftJoinAndSelect("task.user", "user")
+        .where("datetime(task.scheduledAt) <= datetime(:now)", { now: now.toISOString() })
+        .andWhere("task.status = :status", { status: TaskStatus.READY })
+        .getMany()
     .then((allTasks: Task[]) => {
+        let total = 0
         for (var task of allTasks) {
             taskSvc.processTask(task)
+            total++
         }
-        res.send({})
+        res.send({ now: now.format('YYYY-MM-DD HH:mm Z'), total })
     }).catch(errors => {
         next(errors)
     });
