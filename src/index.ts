@@ -1,7 +1,9 @@
 import express, { Express, Request, Response , Application, NextFunction } from 'express';
 import { AppDataSource } from "./data-source"
 import { User } from "./entity/User"
+import { Task } from "./entity/Task"
 import { UserService }  from "./services/userService"
+import { TaskService }  from "./services/taskService"
 
 import moment from 'moment-timezone';
 
@@ -40,18 +42,32 @@ app.get('/user', (req: Request, res: Response, next: NextFunction) => {
 
 app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     const svc = new UserService()
+    const taskSvc = new TaskService()
     const userRepository = AppDataSource.getRepository(User)
+    const taskRepository = AppDataSource.getRepository(Task)
 
     svc.validateUserParam(req.body)
 
     const user = new User()
     svc.applyUser(user, req.body)
 
+    const data = {
+        userId: 0,
+        taskId: 0,
+    }
+
     userRepository.save(user).then((user: User) => {
         console.log("Saved a new user with id: " + user.id)
-        const data = {
-            userId: user.id
-        }
+        data.userId = user.id
+        const taskAt = taskSvc.findNextSchedule(user)
+
+        const task = new Task()
+        task.user = user
+        task.scheduledAt = taskAt
+        return taskRepository.save(task)
+    }).then((task: Task) => {
+        console.log("Created a task with id: " + task.id)
+        data.taskId = task.id
         res.status(201).send(data)
     }).catch(errors => {
         next(errors)
@@ -105,6 +121,8 @@ app.put('/user/:userId', (req: Request, res: Response, next: NextFunction) => {
     }).catch(errors => {
         next(errors)
     });
+
+    // TODO: check existing task for changed birthday with taskService
 });
 
 app.use(jsonErrorHandler)
