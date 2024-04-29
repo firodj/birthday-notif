@@ -13,7 +13,17 @@ export class User {
     @Column()
     lastName: string
 
-    @Column({ type: "date" })
+    @Column({
+        type: "date",
+        transformer: {
+            to(value) {
+                return moment(value).format('YYYY-MM-DD');
+            },
+            from(value: moment.Moment) {
+                return value
+            }
+        },
+    })
     birthday: moment.Moment
 
     @Column()

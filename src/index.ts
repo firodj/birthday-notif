@@ -29,6 +29,15 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Welcome to Express & TypeScript Server for Birthday Notif');
 });
 
+app.get('/user', (req: Request, res: Response, next: NextFunction) => {
+    const userRepository = AppDataSource.getRepository(User)
+    userRepository.find().then((allUsers: User[]) => {
+        res.send(allUsers)
+    }).catch(errors => {
+        next(errors)
+    });
+})
+
 app.post('/user', (req: Request, res: Response, next: NextFunction) => {
     const svc = new UserService()
     const userRepository = AppDataSource.getRepository(User)

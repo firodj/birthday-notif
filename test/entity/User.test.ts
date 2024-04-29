@@ -17,4 +17,8 @@ test('create user and get', async () => {
     const allUsers = await userRepository.find()
 
     expect(allUsers).toHaveLength(1);
+
+    const timbered = await userRepository.findOneBy({id: timber.id })
+    expect(timbered?.firstName).toBe(timber.firstName)
+    expect(timbered?.birthday.toString()).toBe("2024-02-20")
 });
